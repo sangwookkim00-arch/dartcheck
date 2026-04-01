@@ -1,0 +1,35 @@
+name: DART 대주주 공시 모니터링
+
+# 매일 KST 09:00에 실행 (UTC 00:00)
+# 월~금만 실행 (일~목 UTC 기준, 한국시간 월~금)
+on:
+  schedule:
+    - cron: '0 0 * * 1-5'
+  workflow_dispatch:  # 수동 실행도 가능
+
+jobs:
+  check-disclosures:
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+
+      - name: Node.js 설정
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+
+      - name: 의존성 설치
+        run: npm ci
+
+      - name: 공시 모니터링 실행
+        run: npx tsx src/index.ts
+        env:
+          DART_API_KEY: ${{ secrets.DART_API_KEY }}
+          SENDER_EMAIL: ${{ secrets.SENDER_EMAIL }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          RECEIVER_EMAIL: ${{ secrets.RECEIVER_EMAIL }}
+          SMTP_HOST: smtp.gmail.com
+          SMTP_PORT: '465'
