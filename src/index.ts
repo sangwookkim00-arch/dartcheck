@@ -39,28 +39,36 @@ function loadTargetCompanies(): TargetCompany[] {
 }
 
 /**
- * 전일자(한국 영업일 기준)를 계산
+ * 검색 대상 기간(한국 영업일 기준)을 계산
  * 
- * 왜 한국 시간 기준? → DART 공시는 한국 영업일 기준으로 등록되기 때문
- * 월요일 아침 실행 시 → 금요일 기준 데이터 조회
- * 
- * 주의: 공휴일은 고려하지 않음 (공휴일에도 실행되면 빈 결과가 나올 뿐)
+ * 왜 한국 시간 기준? → DART 공시는 한국 시간에 맞춰 등록됨
+ * 월요일 실행 시: 금, 토, 일 (3일간) 공시 검색
+ * 화~금 실행 시: 전일자 (1일간) 공시 검색
  */
-function getYesterdayKST(): string {
+function getCheckDateRange(): { startDate: string, endDate: string } {
   const now = dayjs().tz('Asia/Seoul');
-  let yesterday = now.subtract(1, 'day');
+  let startDate = now.subtract(1, 'day');
+  let endDate = now.subtract(1, 'day');
 
-  // 일요일(0) → 금요일로, 토요일(6) → 금요일로
-  const dayOfWeek = yesterday.day();
-  if (dayOfWeek === 0) {
-    // 어제가 일요일이면 → 금요일 (2일 전)
-    yesterday = yesterday.subtract(2, 'day');
-  } else if (dayOfWeek === 6) {
-    // 어제가 토요일이면 → 금요일 (1일 전)
-    yesterday = yesterday.subtract(1, 'day');
+  const dayOfWeek = now.day();
+  if (dayOfWeek === 1) {
+    // 오늘이 월요일(1)이면 → 금, 토, 일 (3일 전 ~ 1일 전) 검색
+    startDate = now.subtract(3, 'day');
+    endDate = now.subtract(1, 'day');
+  } else if (dayOfWeek === 0) {
+    // 오늘이 일요일(0)이면 → 목, 금, 토 (3일 전 ~ 1일 전) 검색 (수동 실행 대비)
+    startDate = now.subtract(3, 'day');
+    endDate = now.subtract(1, 'day');
+  } else {
+    // 화~토 실행 시 → 전일자 1일 검색
+    startDate = now.subtract(1, 'day');
+    endDate = now.subtract(1, 'day');
   }
 
-  return yesterday.format('YYYYMMDD');
+  return {
+    startDate: startDate.format('YYYYMMDD'),
+    endDate: endDate.format('YYYYMMDD')
+  };
 }
 
 /**
@@ -77,14 +85,28 @@ async function main() {
 
   // 2. 검색 대상 날짜 계산
   // 환경변수 CHECK_DATE가 있으면 해당 날짜 사용 (테스트/수동 실행용)
-  const checkDate = process.env.CHECK_DATE || getYesterdayKST();
-  const formattedDate = `${checkDate.slice(0, 4)}-${checkDate.slice(4, 6)}-${checkDate.slice(6, 8)}`;
+  let startDate: string;
+  let endDate: string;
+  
+  if (process.env.CHECK_DATE) {
+    startDate = process.env.CHECK_DATE;
+    endDate = process.env.CHECK_DATE;
+  } else {
+    const range = getCheckDateRange();
+    startDate = range.startDate;
+    endDate = range.endDate;
+  }
+  
+  const formattedDate = startDate === endDate 
+    ? `${startDate.slice(0, 4)}-${startDate.slice(4, 6)}-${startDate.slice(6, 8)}`
+    : `${startDate.slice(0, 4)}-${startDate.slice(4, 6)}-${startDate.slice(6, 8)} ~ ${endDate.slice(0, 4)}-${endDate.slice(4, 6)}-${endDate.slice(6, 8)}`;
+    
   console.log(`📅 검색 기준일: ${formattedDate}`);
   console.log();
 
   // 3. 공시 검색
   console.log('🔍 DART 공시 검색 시작...');
-  const results = await searchAllDisclosures(companies, checkDate);
+  const results = await searchAllDisclosures(companies, startDate, endDate);
   console.log();
 
   // 결과 요약 출력

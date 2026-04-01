@@ -32,15 +32,16 @@ function sleep(ms: number): Promise<void> {
  */
 export async function searchDisclosures(
   corpCode: string,
-  date: string // YYYYMMDD 형식
+  startDate: string, // YYYYMMDD 형식
+  endDate: string
 ): Promise<DartDisclosure[]> {
   try {
     const response = await axios.get<DartListResponse>(config.dart.listUrl, {
       params: {
         crtfc_key: config.dart.apiKey,
         corp_code: corpCode,
-        bgn_de: date,        // 검색 시작일
-        end_de: date,         // 검색 종료일 (같은 날 = 당일만)
+        bgn_de: startDate,    // 검색 시작일
+        end_de: endDate,      // 검색 종료일
         pblntf_ty: 'D',       // 지분공시
         pblntf_detail_ty: 'D002', // 임원ㆍ주요주주특정증권등소유상황보고서
         page_count: 100,
@@ -86,13 +87,14 @@ export async function searchDisclosures(
  */
 export async function searchAllDisclosures(
   companies: TargetCompany[],
-  date: string
+  startDate: string,
+  endDate: string
 ): Promise<{ company: TargetCompany; disclosures: DartDisclosure[] }[]> {
   const results: { company: TargetCompany; disclosures: DartDisclosure[] }[] = [];
 
   for (const company of companies) {
     console.log(`🔍 공시 검색 중: ${company.name} (${company.corpCode})`);
-    const disclosures = await searchDisclosures(company.corpCode, date);
+    const disclosures = await searchDisclosures(company.corpCode, startDate, endDate);
 
     if (disclosures.length > 0) {
       console.log(`  ✅ ${disclosures.length}건 발견!`);
