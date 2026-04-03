@@ -110,6 +110,88 @@ export async function searchAllDisclosures(
 }
 
 /**
+ * 특정 기업의 특정 날짜에 대한 기업이벤트 공시를 검색
+ * 
+ * 조건: pblntf_ty나 pblntf_detail_ty 제약 없이 전체 공시(또는 수시/정기)에서
+ * 지정된 보고서명/키워드가 포함된 공시만 필터링
+ */
+export async function searchEventDisclosures(
+  corpCode: string,
+  startDate: string,
+  endDate: string
+): Promise<DartDisclosure[]> {
+  try {
+    const response = await axios.get<DartListResponse>(config.dart.listUrl, {
+      params: {
+        crtfc_key: config.dart.apiKey,
+        corp_code: corpCode,
+        bgn_de: startDate,
+        end_de: endDate,
+        page_count: 100,
+      },
+      timeout: 10000,
+    });
+
+    const data = response.data;
+
+    // "013" = 조회된 데이터가 없음
+    if (data.status === '013') {
+      return [];
+    }
+
+    if (data.status !== '000') {
+      console.warn(`⚠️ DART API 경고 [${corpCode}]: ${data.message} (status: ${data.status})`);
+      return [];
+    }
+
+    // 키워드 목록: 주주총회, 주식소각, 배당, 유상증자, 무상증자, 유상감자, 무상감자
+    const keywords = [
+      '주주총회', '주식소각', '배당', '유상증자', '무상증자', '유상감자', '무상감자'
+    ];
+
+    const filtered = (data.list || []).filter(d =>
+      keywords.some(kw => d.report_nm.includes(kw))
+    );
+
+    return filtered;
+  } catch (error) {
+    if (axios.isAxiosError(error)) {
+      console.error(`❌ DART API 호출 실패 [${corpCode}]:`, error.message);
+    } else {
+      console.error(`❌ 알 수 없는 에러 [${corpCode}]:`, error);
+    }
+    return [];
+  }
+}
+
+/**
+ * 모든 대상 기업에 대해 기업이벤트 공시를 검색하고 결과 반환
+ */
+export async function searchAllEventDisclosures(
+  companies: TargetCompany[],
+  startDate: string,
+  endDate: string
+): Promise<{ company: TargetCompany; disclosures: DartDisclosure[] }[]> {
+  const results: { company: TargetCompany; disclosures: DartDisclosure[] }[] = [];
+
+  for (const company of companies) {
+    console.log(`🔍 공시 검색 중: ${company.name} (${company.corpCode})`);
+    const disclosures = await searchEventDisclosures(company.corpCode, startDate, endDate);
+
+    if (disclosures.length > 0) {
+      console.log(`  ✅ ${disclosures.length}건 발견!`);
+    }
+
+    results.push({ company, disclosures });
+
+    await sleep(API_DELAY_MS);
+  }
+
+  return results;
+}
+
+
+/**
  * 삼성생명의 타법인 출자현황을 DART API로 조회
  * 
  * 왜 사용? → 삼성생명이 10% 이상 지분을 보유한 상장기업 목록을 자동 갱신하기 위해
