@@ -30,8 +30,6 @@ async function searchDisclosuresRange(
         corp_code: corpCode,
         bgn_de: startDate,
         end_de: endDate,
-        pblntf_ty: 'D',
-        pblntf_detail_ty: 'D002',
         page_count: 100,
       },
       timeout: 15000,
@@ -46,7 +44,7 @@ async function searchDisclosuresRange(
     }
 
     return (data.list || []).filter(d =>
-      d.report_nm.includes('주요주주특정증권')
+      d.report_nm.includes('주요주주특정증권') || d.report_nm.includes('대량보유상황')
     );
   } catch (error) {
     console.error(`  ❌ API 호출 실패:`, error instanceof Error ? error.message : error);
@@ -56,7 +54,7 @@ async function searchDisclosuresRange(
 
 async function main() {
   console.log('============================================================');
-  console.log('  DART 공시 모니터링 - 로컬 테스트 (최근 1년 범위)');
+  console.log('  DART 공시 모니터링 - 로컬 테스트 (최근 1달 범위)');
   console.log('============================================================\n');
 
   // 대상 기업 로드
@@ -64,10 +62,10 @@ async function main() {
   const companies: TargetCompany[] = JSON.parse(raw);
   console.log(`모니터링 대상: ${companies.map(c => c.name).join(', ')}\n`);
 
-  // 날짜 범위: 최근 1년
+  // 날짜 범위: 최근 1달
   const now = dayjs().tz('Asia/Seoul');
   const endDate = now.format('YYYYMMDD');
-  const startDate = now.subtract(1, 'year').format('YYYYMMDD');
+  const startDate = now.subtract(1, 'month').format('YYYYMMDD');
   console.log(`검색 기간: ${startDate} ~ ${endDate}\n`);
 
   const results: MonitoringResult[] = [];
@@ -98,7 +96,8 @@ async function main() {
   console.log(`검색 결과: 총 ${totalFound}건의 주요주주특정증권 공시 발견`);
   console.log(`============================================================\n`);
 
-  // 이메일 발송
+  // 이메일 발송 (테스트를 위해 대상 제한)
+  config.email.receivers = ['sw8000.kim@samsung.com'];
   const dateLabel = `${startDate.slice(0,4)}-${startDate.slice(4,6)}-${startDate.slice(6,8)} ~ ${endDate.slice(0,4)}-${endDate.slice(4,6)}-${endDate.slice(6,8)} (테스트)`;
 
   console.log('이메일 발송 중...');

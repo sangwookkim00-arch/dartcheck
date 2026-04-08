@@ -42,8 +42,6 @@ export async function searchDisclosures(
         corp_code: corpCode,
         bgn_de: startDate,    // 검색 시작일
         end_de: endDate,      // 검색 종료일
-        pblntf_ty: 'D',       // 지분공시
-        pblntf_detail_ty: 'D002', // 임원ㆍ주요주주특정증권등소유상황보고서
         page_count: 100,
       },
       timeout: 10000,
@@ -62,10 +60,10 @@ export async function searchDisclosures(
       return [];
     }
 
-    // report_nm에 "주요주주특정증권" 키워드가 포함된 보고서만 필터링
-    // 왜 이중 체크? → D002 유형이 아닌 보고서가 섞일 가능성 방지
+    // 주요주주관련 보고서 (D001: 5%보고서, D002: 임원/주요주주 보고서) 필터링
     const filtered = (data.list || []).filter(d =>
-      d.report_nm.includes('주요주주특정증권')
+      d.report_nm.includes('주요주주특정증권') ||
+      d.report_nm.includes('대량보유상황')
     );
 
     return filtered;
