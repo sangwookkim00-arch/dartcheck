@@ -187,7 +187,6 @@ function buildEmailHtml(results: MonitoringResult[], dateStr: string): string {
       <div class="company-section">
         <div class="company-header">
           ${result.company.name}
-          <span class="share">(삼성생명 지분율: ${result.company.shareRatio}%)</span>
         </div>
         <table>
           <thead>
@@ -232,7 +231,7 @@ function buildEmailHtml(results: MonitoringResult[], dateStr: string): string {
   html += `
       <div class="target-list">
         <strong>📋 모니터링 대상 기업 (삼성생명 지분 10% 이상)</strong>
-        ${results.map(r => `${r.company.name}(${r.company.shareRatio}%)`).join(' · ')}
+        ${results.map(r => r.company.name).join(' · ')}
       </div>
     </div>
     <div class="footer">

@@ -2,37 +2,31 @@
   {
     "name": "삼성생명",
     "corpCode": "00126256",
-    "stockCode": "032830",
-    "shareRatio": 100.0
+    "stockCode": "032830"
   },
   {
     "name": "삼성화재",
     "corpCode": "00126296",
-    "stockCode": "000810",
-    "shareRatio": 15.17
+    "stockCode": "000810"
   },
   {
     "name": "삼성카드",
     "corpCode": "00126434",
-    "stockCode": "029780",
-    "shareRatio": 71.91
+    "stockCode": "029780"
   },
   {
     "name": "삼성증권",
     "corpCode": "00131040",
-    "stockCode": "016360",
-    "shareRatio": 29.42
+    "stockCode": "016360"
   },
   {
     "name": "삼성FN리츠",
     "corpCode": "01688896",
-    "stockCode": "448730",
-    "shareRatio": 18.2
+    "stockCode": "448730"
   },
   {
     "name": "호텔신라",
     "corpCode": "00165680",
-    "stockCode": "008770",
-    "shareRatio": 7.3
+    "stockCode": "008770"
   }
 ]

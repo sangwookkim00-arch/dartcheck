@@ -12,8 +12,6 @@ export interface TargetCompany {
   corpCode: string;
   /** 종목코드 6자리 (상장 확인용) */
   stockCode: string;
-  /** 삼성생명 보유 지분율 (%) */
-  shareRatio: number;
 }
 
 // --- DART 공시 검색 API 응답 ---
