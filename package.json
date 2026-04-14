@@ -6,6 +6,7 @@
   "scripts": {
     "start": "tsx src/index.ts",
     "check-events": "tsx src/index-events.ts",
+    "test-events-3months": "tsx src/test-events-3months.ts",
     "update-targets": "tsx src/update-targets.ts",
     "test-email": "tsx src/test-email.ts"
   },
