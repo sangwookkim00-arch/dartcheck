@@ -1,0 +1,48 @@
+name: Keepalive
+
+# 매월 1일 UTC 00:00 (KST 09:00)에 실행
+# GitHub는 60일간 커밋이 없으면 scheduled workflow를 자동 비활성화함
+# 이 워크플로우가 매달 커밋을 남겨 비활성화를 예방함
+on:
+  schedule:
+    - cron: '0 0 1 * *'
+  workflow_dispatch:  # 수동 실행 가능
+
+permissions:
+  contents: write   # .keepalive 파일 커밋용
+  actions: write    # 워크플로우 재활성화용
+
+jobs:
+  keepalive:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 코드 체크아웃
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 타임스탬프 업데이트 (비활성 타이머 리셋)
+        run: |
+          echo "$(date -u '+%Y-%m-%d %H:%M:%S UTC')" > .keepalive
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add .keepalive
+          git diff --staged --quiet || git commit -m "chore: keepalive $(date -u '+%Y-%m') [skip ci]"
+          git push
+
+      - name: 기업이벤트 모니터링 워크플로우 재활성화
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            try {
+              await github.rest.actions.enableWorkflow({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                workflow_id: 'daily-events-check.yml'
+              });
+              console.log('✅ daily-events-check.yml 재활성화 완료');
+            } catch (error) {
+              console.log('ℹ️ 이미 활성화 상태이거나 오류:', error.message);
+            }
